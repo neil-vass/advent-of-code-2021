@@ -1,15 +1,15 @@
 
-import itertools
+import itertools, functools
 
 def test_fetch_data_gives_ints():
     data = fetch_data()
-    assert data[0] == 1721
-    assert data[-1] == 1456
+    assert data[0] == 1801
+    assert data[-1] == 1662
     
-def test_find_pair_that_sums_to():
+def test_find_combo_that_sums_to():
     li = [1,2,3]
     target = 4
-    assert find_pair_that_sums_to(li, target) == (1,3)
+    assert find_combo_that_sums_to(li, 2, target) == (1,3)
 
 def fetch_data():
     with open('input_day01_2020.txt', 'r') as f:
@@ -17,14 +17,14 @@ def fetch_data():
     return li
 
 
-def find_pair_that_sums_to(li, target):
-    return next(pair for pair in itertools.combinations(li, 2) if sum(pair) == target)
+def find_combo_that_sums_to(li, no_of_elements, target):
+    return next(combo for combo in itertools.combinations(li, no_of_elements) if sum(combo) == target)
 
 
 
 
 
 if __name__ == "__main__":
-    x, y = find_pair_that_sums_to(fetch_data(), 2020)
-    print(x * y)
-
+    elems = find_combo_that_sums_to(fetch_data(), 3, 2020)
+    answer = functools.reduce(lambda x, y: x*y, elems)
+    print(answer)
