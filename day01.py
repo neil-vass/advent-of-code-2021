@@ -1,8 +1,4 @@
 
-# Thought SciPy would be useful; followed steps here to install it:
-# https://solarianprogrammer.com/2016/10/04/install-python-numpy-scipy-matplotlib-macos/
-# There's lots of advice about best ways to set it up, but pip just works.
-
 def test_fetch_data_gives_ints():
     data = fetch_data('sample_data/day01.txt')
     assert data[0] == 199
@@ -12,9 +8,20 @@ def test_num_increases():
     assert num_increases([199, 200]) == 1
     assert num_increases([210, 200, 207, 240]) == 2
 
-def test_sample_data_gives_correct_result():
+def test_sample_data_gives_correct_result_pt1():
     data = fetch_data('sample_data/day01.txt')
     assert num_increases(data) == 7
+
+def test_sliding_window():
+    data = fetch_data('sample_data/day01.txt')
+    assert get_sliding_windows(data) == [607, 618, 618, 617, 647, 716, 769, 792]
+
+def test_sample_data_gives_correct_result_pt2():
+    data = fetch_data('sample_data/day01.txt')
+    windows = get_sliding_windows(data)
+    assert num_increases(windows) == 5
+
+
 
 
 def fetch_data(path):
@@ -32,7 +39,17 @@ def num_increases(data):
         pass
     return increases
 
+def get_sliding_windows(data):
+    windows = []
+    try:
+        for idx, x in enumerate(data):
+            window_sum = x + data[idx+1] + data[idx+2]
+            windows.append(window_sum)
+    except IndexError:
+        pass
+    return windows
+
 
 if __name__ == "__main__":
-    data = fetch_data('data/day01.txt')
+    data = get_sliding_windows(fetch_data('data/day01.txt'))
     print(num_increases(data))
