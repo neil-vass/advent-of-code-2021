@@ -30,24 +30,10 @@ def fetch_data(path):
     return li
 
 def num_increases(data):
-    increases = 0 
-    try:
-        for idx, x in enumerate(data):
-            if data[idx+1] > x:
-                increases += 1
-    except IndexError:
-        pass
-    return increases
+    return sum(cur < nxt for cur, nxt in zip(data, data[1:]))
 
 def get_sliding_windows(data):
-    windows = []
-    try:
-        for idx, x in enumerate(data):
-            window_sum = x + data[idx+1] + data[idx+2]
-            windows.append(window_sum)
-    except IndexError:
-        pass
-    return windows
+    return [sum(data[i:i+3]) for i in range(len(data)-2)]
 
 
 if __name__ == "__main__":
