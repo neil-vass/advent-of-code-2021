@@ -23,12 +23,40 @@ class Board:
 
     
 
-
 def fetch_data(path):
     with open(path, 'r') as f:
+        draws = [int(n) for n in f.readline().split(',')]
+        boards = []
+        f.readline()
+        values = []
         for ln in f:
-            yield ln
+            if len(ln) <= 1:
+                boards.append(Board(values))
+                values = []
+            else:
+                values.append([int(n) for n in ln.split()])
+        
+        return draws, boards
 
+
+def find_winner(draws, boards):
+    for draw in draws:
+        for board in boards:
+            board.mark(draw)
+            if board.is_winner():
+                return draw, board
+
+def find_loser(draws, boards):
+    boards_left = len(boards)
+    for draw in draws:
+        for board in boards:
+            if not board.is_winner():
+                board.mark(draw)
+                if board.is_winner():
+                    boards_left -=1
+                if boards_left == 0:
+                    return draw, board
+                
 
 #--------------------- tests -------------------------#
 
@@ -65,9 +93,27 @@ def test_board_wins_when_whole_col_marked():
 
 
 
+def test_fetch_data():
+    draws, boards = fetch_data('sample_data/day04.txt')
+    assert draws[:3] == [7,4,9]
+    assert len(boards) == 3
+    assert boards[1]._values[0, 0] == 3
 
+def test_find_winner_with_sample_data():
+    draws, boards = fetch_data('sample_data/day04.txt')
+    last_draw, board = find_winner(draws, boards)
+    assert last_draw == 24
+    assert board.sum_of_unmarked_values() == 188
+
+def test_find_loser_with_sample_data():
+    draws, boards = fetch_data('sample_data/day04.txt')
+    last_draw, board = find_loser(draws, boards)
+    assert last_draw == 13
+    assert board.sum_of_unmarked_values() == 148
 
 #-----------------------------------------------------#
 
 if __name__ == "__main__":
-    print('Hello, World!')
+    draws, boards = fetch_data('data/day04.txt')
+    last_draw, board = find_loser(draws, boards)
+    print(last_draw * board.sum_of_unmarked_values())
