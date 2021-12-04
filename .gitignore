@@ -6,3 +6,4 @@ include/
 lib/
 pyvenv.cfg
 data/
+advent-2020-bits/
