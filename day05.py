@@ -27,13 +27,13 @@ class Field:
                 cur_y += y_step
                 self.matrix[cur_x, cur_y] += 1
 
-
     def mark_all(self, data):
         for entry in data:
             self.mark(*entry)
 
     def count_overlaps(self):
         return np.count_nonzero(self.matrix > 1)
+
 
 def fetch_data(path):
     with open(path, 'r') as f:
