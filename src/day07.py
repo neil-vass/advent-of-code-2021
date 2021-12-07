@@ -10,6 +10,18 @@ def find_cheapest_target(positions):
     costs = [(t, align_on(positions, t)) for t in set(positions)]
     return min(costs, key=lambda c: c[1])
 
+
+def align_on_pt2(positions, target):
+    cost = 0
+    for p in positions:
+        dist = abs(p - target)
+        cost += (dist+1) * (dist/2)
+    return int(cost)
+
+def find_cheapest_target_pt2(positions):
+    costs = [(t, align_on_pt2(positions, t)) for t in range(min(positions), max(positions)+1)]
+    return min(costs, key=lambda c: c[1])
+
 #--------------------- tests -------------------------#
 
 def test_fetch_data():
@@ -26,8 +38,21 @@ def test_find_cheapest_target():
     data = fetch_data('sample_data/day07.txt')
     assert find_cheapest_target(data) == (2, 37)
 
+def test_align_on_pt2():
+    data = fetch_data('sample_data/day07.txt')
+    assert align_on_pt2(data, 5) == 168
+    assert align_on_pt2(data, 2) == 206
+
+def test_find_cheapest_target_pt2():
+    data = fetch_data('sample_data/day07.txt')
+    assert find_cheapest_target_pt2(data) == (5, 168)
+
 #-----------------------------------------------------#
 
 if __name__ == "__main__":
     data = fetch_data('data/day07.txt')
-    print(find_cheapest_target(data))
+    print(find_cheapest_target_pt2(data))
+
+
+
+
