@@ -3,6 +3,7 @@ def fetch_data(path):
     with open(path, 'r') as f:
         return [int(n) for n in f.readline().split(',')]
 
+# Puts fish in a list, which gets too long.
 def simulate(initial_state, days):
     state = initial_state[:]
     for _ in range(days):
@@ -16,6 +17,7 @@ def simulate(initial_state, days):
         state = state + [8] * babies
     return state
 
+# Puts count of fish at each age in a dictionary, which stays tiny.
 def simulate_v2(initial_state, days):
     school = dict.fromkeys(range(9), 0)
     for fish in initial_state:
