@@ -26,17 +26,24 @@ def identify_all_digits(unique_patterns):
     # Get the easy digits: 1, 4, 7, 8
     digits_to_strings = dict([(b,a) for a,b in identify_easy_digits(unique_patterns) if b])
     
+    # 6 is the only digit with 6 segments that isn't a superset of 1's segments.
     digits_to_strings[6] = [p for p in unique_patterns if len(p) == 6 and not set(p) >= set(digits_to_strings[1])][0]
+
+    # 3 is the only digit with 5 segments that is a superset of 1's segments.
     digits_to_strings[3] = [p for p in unique_patterns if len(p) == 5 and set(p) >= set(digits_to_strings[1])][0]
     
-    top_right_line = list(set(digits_to_strings[8]) - set(digits_to_strings[6]))[0]
+    # Upper right is the only segment that's in 8 but not in 6.
+    upper_right_line = list(set(digits_to_strings[8]) - set(digits_to_strings[6]))[0]
 
-    digits_to_strings[5] = [p for p in unique_patterns if len(p) == 5 and top_right_line not in p][0]
+    # There are 2 more digits with 5 segments: 5 (which uses upper right) and 2.
+    digits_to_strings[5] = [p for p in unique_patterns if len(p) == 5 and upper_right_line not in p][0]
     digits_to_strings[2] = [p for p in unique_patterns if len(p) == 5 and p not in (digits_to_strings[3], digits_to_strings[5])][0]
 
-    bottom_left_line = list(set(digits_to_strings[6]) - set(digits_to_strings[5]))[0]
+    # Lower left is used in 6 but not 5.
+    lower_left_line = list(set(digits_to_strings[6]) - set(digits_to_strings[5]))[0]
     
-    digits_to_strings[9] = [p for p in unique_patterns if len(p) == 6 and bottom_left_line not in p][0]
+    # There are 2 more 6-segment digits: 9 uses lower left.
+    digits_to_strings[9] = [p for p in unique_patterns if len(p) == 6 and lower_left_line not in p][0]
     digits_to_strings[0] = [p for p in unique_patterns if len(p) == 6 and p not in (digits_to_strings[6], digits_to_strings[9])][0]
 
     strings_to_digits = {v: k for k, v in digits_to_strings.items()}
