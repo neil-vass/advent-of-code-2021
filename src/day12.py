@@ -9,7 +9,15 @@ class Caves:
             self.graph[right].append(left)
 
     def find_paths_from(self, so_far):  
-        next_steps = [n for n in self.graph[so_far[-1]] if n.isupper() or n not in so_far]
+        # Check if we've done 2 vists to any small cave yet
+        small_caves = [c for c in so_far if c.islower()]
+        dbl_visit_done = len(small_caves) > len(set(small_caves))
+
+        if dbl_visit_done:
+            next_steps = [n for n in self.graph[so_far[-1]] if n.isupper() or n not in so_far]
+        else:
+            next_steps = [n for n in self.graph[so_far[-1]] if n != 'start']
+        
         if next_steps:
             options = []
             for n in next_steps:
@@ -50,17 +58,17 @@ def test_find_paths_with_branch():
 def test_find_paths_in_sample1():
     data = fetch_data('sample_data/day12-sample1.txt')
     caves = Caves(data)
-    assert len(caves.find_paths()) == 10
+    assert len(caves.find_paths()) == 36
 
 def test_find_paths_in_sample2():
     data = fetch_data('sample_data/day12-sample2.txt')
     caves = Caves(data)
-    assert len(caves.find_paths()) == 19
+    assert len(caves.find_paths()) == 103
 
 def test_find_paths_in_sample3():
     data = fetch_data('sample_data/day12-sample3.txt')
     caves = Caves(data)
-    assert len(caves.find_paths()) == 226
+    assert len(caves.find_paths()) == 3509
 
 #-----------------------------------------------------#
 
