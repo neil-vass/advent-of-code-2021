@@ -4,6 +4,7 @@ __pycache__/
 bin/
 include/
 lib/
+share/
 pyvenv.cfg
 data/
 advent-2020-bits/
