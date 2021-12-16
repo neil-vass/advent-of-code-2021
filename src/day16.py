@@ -1,7 +1,8 @@
+import math
 
 class BinaryString:
     def __init__(self, hex_str):
-        self.binary = hex_to_binary(hex_str)
+        self.binary = ''.join(format(int(d, 16), '04b') for d in hex_str)
         self.idx = 0
 
     def get_next(self, count):
@@ -10,20 +11,17 @@ class BinaryString:
         return result
 
     
-
 def fetch_data(path):
     with open(path, 'r') as f:
         return f.readline().rstrip()
 
-def hex_to_binary(hex_str):
-    return ''.join(format(int(d, 16), '04b') for d in hex_str)
-
-
 def get_packet_details(binary):
-    packet = { 'version': int(binary.get_next(3), 2)}
-    type_id = int(binary.get_next(3), 2)
+    packet = {
+        'version': int(binary.get_next(3), 2),
+        'type': int(binary.get_next(3), 2)
+    }
  
-    if type_id == 4:
+    if packet['type'] == 4:
         val = ''
         got_last_packet = False
         while not got_last_packet:
@@ -53,22 +51,52 @@ def sum_of_version_numbers(packet):
     subs = packet.get('subs',[])
     return packet['version'] + sum(sum_of_version_numbers(s) for s in subs)
 
-def parse_and_sum(hex_str):
+def parse_and_sum_version_nums(hex_str):
     binary = BinaryString(hex_str)
     packet = get_packet_details(binary) 
     return sum_of_version_numbers(packet)
+
+
+def run_operations(packet):
+    op = packet['type']
+    if op == 4:
+        return packet['value']
+    
+    subs = [run_operations(s) for s in packet['subs']]
+    if op == 0:
+        return sum(subs)
+    elif op == 1:
+        return math.prod(subs)
+    elif op == 2:
+        return min(subs)
+    elif op == 3:
+        return max(subs)
+    elif op == 5: 
+        return subs[0] > subs[1]
+    elif op == 6: 
+        return subs[0] < subs[1]
+    elif op == 7: 
+        return subs[0] == subs[1]
+
+
+def parse_and_run_operations(hex_str):
+    binary = BinaryString(hex_str)
+    packet = get_packet_details(binary) 
+    return run_operations(packet)
 
 
 
 #--------------------- tests -------------------------#
 
 def test_hex_to_binary():
-    assert hex_to_binary('D2FE28') == '110100101111111000101000'
+    binary = BinaryString('D2FE28')
+    assert binary.binary == '110100101111111000101000'
 
 def test_get_packet_details():
     binary = BinaryString('D2FE28')
     assert get_packet_details(binary) == {
         'version': 6, 
+        'type': 4,
         'value': 2021
     }
 
@@ -87,11 +115,23 @@ def test_get_packet_and_subs_by_number_of_subs():
     assert [s['value'] for s in packet['subs']] == [1, 2, 3]
 
 def test_sum_of_version_numbers():
-    assert parse_and_sum('D2FE28') == 6
-    assert parse_and_sum('8A004A801A8002F478') == 16
-    assert parse_and_sum('A0016C880162017C3686B18A3D4780') == 31
+    assert parse_and_sum_version_nums('D2FE28') == 6
+    assert parse_and_sum_version_nums('8A004A801A8002F478') == 16
+    assert parse_and_sum_version_nums('A0016C880162017C3686B18A3D4780') == 31
+
+def test_run_operations():
+    assert parse_and_run_operations('C200B40A82') == 3
+    assert parse_and_run_operations('04005AC33890') == 54
+    assert parse_and_run_operations('880086C3E88112') == 7
+    assert parse_and_run_operations('CE00C43D881120') == 9
+    assert parse_and_run_operations('D8005AC2A8F0') == 1
+    assert parse_and_run_operations('F600BC2D8F') == 0
+    assert parse_and_run_operations('9C005AC2F8F0') == 0
+    assert parse_and_run_operations('9C0141080250320F1802104A08') == 1
+
 
 #-----------------------------------------------------#
 
 if __name__ == "__main__":
-    print(parse_and_sum(fetch_data('data/day16.txt')))
+    data = fetch_data('data/day16.txt')
+    print(parse_and_run_operations(data))
