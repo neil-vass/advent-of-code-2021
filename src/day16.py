@@ -51,11 +51,6 @@ def sum_of_version_numbers(packet):
     subs = packet.get('subs',[])
     return packet['version'] + sum(sum_of_version_numbers(s) for s in subs)
 
-def parse_and_sum_version_nums(hex_str):
-    binary = BinaryString(hex_str)
-    packet = get_packet_details(binary) 
-    return sum_of_version_numbers(packet)
-
 
 def run_operations(packet):
     op = packet['type']
@@ -79,10 +74,10 @@ def run_operations(packet):
         return subs[0] == subs[1]
 
 
-def parse_and_run_operations(hex_str):
+def parse_and_run(hex_str, method):
     binary = BinaryString(hex_str)
     packet = get_packet_details(binary) 
-    return run_operations(packet)
+    return method(packet)
 
 
 
@@ -115,23 +110,23 @@ def test_get_packet_and_subs_by_number_of_subs():
     assert [s['value'] for s in packet['subs']] == [1, 2, 3]
 
 def test_sum_of_version_numbers():
-    assert parse_and_sum_version_nums('D2FE28') == 6
-    assert parse_and_sum_version_nums('8A004A801A8002F478') == 16
-    assert parse_and_sum_version_nums('A0016C880162017C3686B18A3D4780') == 31
+    assert parse_and_run('D2FE28', sum_of_version_numbers) == 6
+    assert parse_and_run('8A004A801A8002F478', sum_of_version_numbers) == 16
+    assert parse_and_run('A0016C880162017C3686B18A3D4780', sum_of_version_numbers) == 31
 
 def test_run_operations():
-    assert parse_and_run_operations('C200B40A82') == 3
-    assert parse_and_run_operations('04005AC33890') == 54
-    assert parse_and_run_operations('880086C3E88112') == 7
-    assert parse_and_run_operations('CE00C43D881120') == 9
-    assert parse_and_run_operations('D8005AC2A8F0') == 1
-    assert parse_and_run_operations('F600BC2D8F') == 0
-    assert parse_and_run_operations('9C005AC2F8F0') == 0
-    assert parse_and_run_operations('9C0141080250320F1802104A08') == 1
+    assert parse_and_run('C200B40A82', run_operations) == 3
+    assert parse_and_run('04005AC33890', run_operations) == 54
+    assert parse_and_run('880086C3E88112', run_operations) == 7
+    assert parse_and_run('CE00C43D881120', run_operations) == 9
+    assert parse_and_run('D8005AC2A8F0', run_operations) == 1
+    assert parse_and_run('F600BC2D8F', run_operations) == 0
+    assert parse_and_run('9C005AC2F8F0', run_operations) == 0
+    assert parse_and_run('9C0141080250320F1802104A08', run_operations) == 1
 
 
 #-----------------------------------------------------#
 
 if __name__ == "__main__":
-    data = fetch_data('data/day16.txt')
-    print(parse_and_run_operations(data))
+    hex_str = fetch_data('data/day16.txt')
+    print(parse_and_run(hex_str, run_operations))
