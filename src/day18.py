@@ -1,6 +1,8 @@
 
 import math
 import ast
+import itertools
+import copy
 
 class SN:
     def __init__(self, value):
@@ -110,7 +112,7 @@ class SN:
 
 
     def __add__(self, other):
-        num = SN([self.value, other.value])
+        num = SN([copy.deepcopy(self.value), copy.deepcopy(other.value)])
         num._reduce()
         return num
 
@@ -128,7 +130,7 @@ def fetch_data(path):
 
 
 def largest_mag_from_adding_two(data):
-    return 0
+    return max((a+b).magnitude() for a,b in itertools.permutations(data, 2))
 
 #--------------------- tests -------------------------#
 
@@ -213,11 +215,13 @@ def test_magnitude():
     assert SN([9,1]).magnitude() == 29
     assert SN([[1,2],[[3,4],5]]).magnitude() == 143
     assert SN([[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]).magnitude() == 3488
+
+def test_largest_mag_from_adding_two():
+    data = fetch_data('sample_data/day18-pt2.txt')
+    assert largest_mag_from_adding_two(data) == 3993
+
 #-----------------------------------------------------#
 
 if __name__ == "__main__":
     data = fetch_data('data/day18.txt')
-    num = data[0]
-    for sn in data[1:]:
-        num += sn
-    print(num.magnitude())
+    print(largest_mag_from_adding_two(data))
