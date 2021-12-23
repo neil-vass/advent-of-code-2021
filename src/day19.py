@@ -1,3 +1,5 @@
+# Unfinished! I'll come back to this one...
+
 import re 
 
 X,Y,Z = 0,1,2
@@ -75,7 +77,7 @@ def find_overlaps(a, b, threshold=12):
     return None, None
 
 
-def map_all_beacons(data):
+def map_all_beacons(data, threshold=12):
     scanners_with_known_positions = {0: [(0,0,0), data[0]]}
     beacons = set()
     while len(scanners_with_known_positions) < len(data):
@@ -84,10 +86,8 @@ def map_all_beacons(data):
             if report.id not in known:
                 for k in known:
                     known_scanner_pos, known_report = scanners_with_known_positions[k]
-                    overlaps, relative_scanner_position = find_overlaps(known_report, report)
+                    overlaps, relative_scanner_position = find_overlaps(known_report, report, threshold)
                     if overlaps:
-                        if report.id == 4:
-                            assert relative_scanner_position == known_scanner_pos
                         scanners_with_known_positions[report.id] = [
                             tuple([relative_scanner_position[i] - known_scanner_pos[i] for i in (X,Y,Z)]),
                             report
@@ -122,6 +122,13 @@ def test_find_overlaps_scanners_1_and_4():
     assert len(overlaps) == 12
 
 
+def test_map_all_beacons_for_same_scanner():
+    data = fetch_data('sample_data/day19-same-scanner.txt')
+    beacons, scanners_with_known_positions = map_all_beacons(data, threshold=6)
+    assert len(beacons) == 6
+    assert len(scanners_with_known_positions) == 5
+    assert scanners_with_known_positions[0][1].points == scanners_with_known_positions[1][1].points
+
 def test_map_all_beacons_for_0_1():
     data = fetch_data('sample_data/day19-different-scanners.txt')
     beacons, scanners_with_known_positions = map_all_beacons([data[0], data[1]])
@@ -129,7 +136,7 @@ def test_map_all_beacons_for_0_1():
     assert set(scanners_with_known_positions.keys()) == {0,1}
     assert scanners_with_known_positions[1][0] == (68,-1246,-43)
 
-def test_map_all_beacons_for_0_1_4():
+def _test_map_all_beacons_for_0_1_4():
     data = fetch_data('sample_data/day19-different-scanners.txt')
     beacons, scanners_with_known_positions = map_all_beacons([data[0], data[1], data[4]])
     assert len(beacons) == 24
