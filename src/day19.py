@@ -4,49 +4,12 @@ X,Y,Z = 0,1,2
 
 class Report:
 
-    _rotations = [
-        lambda x,y,z: ( x,  y,  z),
-        lambda x,y,z: ( x,  z, -y),
-        lambda x,y,z: ( x, -y, -z),
-        lambda x,y,z: ( x, -z,  y),
-        lambda x,y,z: (-x, -y,  z),
-        lambda x,y,z: (-x,  z,  y),
-        lambda x,y,z: (-x,  y, -z),
-        lambda x,y,z: (-x, -z, -y),
-
-        lambda x,y,z: ( y, -x,  z),
-        lambda x,y,z: ( y,  z,  x),
-        lambda x,y,z: ( y,  x, -z),
-        lambda x,y,z: ( y, -z, -x),
-        lambda x,y,z: (-y,  x,  z),
-        lambda x,y,z: (-y,  z, -x),
-        lambda x,y,z: (-y, -x, -z),
-        lambda x,y,z: (-y, -z,  x),
-
-        lambda x,y,z: ( z,  y, -x),
-        lambda x,y,z: ( z, -x, -y),
-        lambda x,y,z: ( z, -y,  x),
-        lambda x,y,z: ( z,  x,  y),
-        lambda x,y,z: (-z, -y, -x),
-        lambda x,y,z: (-z, -x,  y),
-        lambda x,y,z: (-z,  y,  x),
-        lambda x,y,z: (-z,  x, -y)
-    ]
-
-    
-
     def __init__(self, id, points):
         self.id = id
         self.points = points
 
     def translate(self, t):
         return Report(self.id, {(p[0]-t[0], p[1]-t[1], p[2]-t[2]) for p in self.points})
-
-
-    def _all_rotations(self):
-        for rot in Report._rotations:
-            yield Report(self.id, {rot(*p) for p in self.points})
-
 
     def rot_fun(facing, first_rot, second_rot, flip_axis, rotation_steps):
         ordering = [facing, first_rot, second_rot]
@@ -68,35 +31,8 @@ class Report:
             for flip_axis in (False, True):
                 for rotation_steps in range(4):
                     rot = Report.rot_fun(facing, first_rot, second_rot, flip_axis, rotation_steps)
-                    yield Report(self.id, {rot(p) for p in self.points})
+                    yield Report(self.id, {rot(p) for p in self.points}), rot
 
-    # Rotate by 90 degrees around a fixed axis.
-    def _rotate(self, first_rot, second_rot):
-        new_points = set()
-        for p in self.points:
-            rotated_p = list(p)
-            rotated_p[first_rot] = -p[second_rot]
-            rotated_p[second_rot] = p[first_rot]               
-            new_points.add(tuple(rotated_p))
-        return Report(id, new_points)
-
-    def _set_facing(self, facing_axis):
-        new_points = set()
-        for p in self.points:
-            facing_p = list(p)
-            facing_p[0] = p[facing_axis]
-            facing_p[facing_axis] = -p[0]
-            new_points.add(tuple(facing_p))
-        return Report(id, new_points)
-
-    def _flip_axis(self, flip_axis, mirrored_axis):
-        new_points = set()
-        for p in self.points:
-            rotated_p = list(p)
-            rotated_p[flip_axis] = -p[flip_axis]
-            rotated_p[mirrored_axis] = -p[mirrored_axis]
-            new_points.add(tuple(rotated_p))
-        return Report(id, new_points)
 
 def fetch_data(path):
     data = []
@@ -116,42 +52,102 @@ def fetch_data(path):
     return data
 
 
-def find_overlaps(a, b):
-    most_overlaps = 0
+def find_overlaps(a, b, threshold=12):
 
-    # Move a so one of its points is at the origin
-    t0 = a.translate(next(iter(a.points)))
+    for translate_a_by in a.points:
+        # Move a so one of its points is at the origin
+        t0 = a.translate(translate_a_by)
 
-    # Move b so one of its points is at the origin, move through all
-    # rotations, then repeat for each point - and note which of these 
-    # gives the most overlaps with a.
-    for p in b.points:
-        t1 = b.translate(p)
+        # Move b so one of its points is at the origin, move through all
+        # rotations, then repeat for each point - and note which of these 
+        # gives the most overlaps with a.
+        for translate_b_by in b.points:
+            t1 = b.translate(translate_b_by)
 
-        for r1 in t1.all_rotations():
-            overlaps = len(t0.points & r1.points)
-            if overlaps > most_overlaps: 
-                most_overlaps = overlaps
+            for r1, rotation_function in t1.all_rotations():
+                overlaps = t0.points & r1.points
+                if len(overlaps) >= threshold: 
+                    path_to_b = rotation_function(translate_b_by)
+                    relative_scanner_position = tuple([translate_a_by[i] - path_to_b[i] for i in (X,Y,Z)])
+                    overlaps = {tuple([ov[i] + translate_a_by[i] for i in (X,Y,Z)]) for ov in overlaps}
+                    return overlaps, relative_scanner_position
+    
+    return None, None
 
-    return most_overlaps
 
-
+def map_all_beacons(data):
+    scanners_with_known_positions = {0: [(0,0,0), data[0]]}
+    beacons = set()
+    while len(scanners_with_known_positions) < len(data):
+        known = list(scanners_with_known_positions.keys())
+        for report in data:
+            if report.id not in known:
+                for k in known:
+                    known_scanner_pos, known_report = scanners_with_known_positions[k]
+                    overlaps, relative_scanner_position = find_overlaps(known_report, report)
+                    if overlaps:
+                        if report.id == 4:
+                            assert relative_scanner_position == known_scanner_pos
+                        scanners_with_known_positions[report.id] = [
+                            tuple([relative_scanner_position[i] - known_scanner_pos[i] for i in (X,Y,Z)]),
+                            report
+                        ]
+                        overlaps = {tuple([ov[i] - known_scanner_pos[i] for i in (X,Y,Z)]) for ov in overlaps}
+                        beacons |= overlaps
+                        break
+    return beacons, scanners_with_known_positions
+                        
 
 #--------------------- tests -------------------------#
-
-def test_find_overlaps_in_2d():
-    z = 0
-    a = Report(0, {(0,2,z), (4,1,z), (3,3,z)})
-    b = Report(1, {(-1,-1,z), (-5,0,z), (-2,1,z)})
-    assert find_overlaps(a, b) == 3
-
 
 def test_find_overlaps_same_scanner_different_orientations():
     data = fetch_data('sample_data/day19-same-scanner.txt')
     first = data[0]
     for other in data:
-        assert find_overlaps(first, other) == len(first.points)
+        overlaps, relative_scanner_position = find_overlaps(first, other, threshold=6)
+        assert len(overlaps) == len(first.points)
+        assert relative_scanner_position == (0,0,0)
 
+def test_find_overlaps_different_scanners():
+    data = fetch_data('sample_data/day19-different-scanners.txt')
+    overlaps, relative_scanner_position = find_overlaps(data[0], data[1])
+    assert len(overlaps) == 12
+    assert (-618,-824,-621) in overlaps
+    assert (-537,-823,-458) in overlaps
+    assert relative_scanner_position == (68,-1246,-43)
+
+def test_find_overlaps_scanners_1_and_4():
+    data = fetch_data('sample_data/day19-different-scanners.txt')
+    overlaps, relative_scanner_position = find_overlaps(data[1], data[4])
+    assert len(overlaps) == 12
+
+
+def test_map_all_beacons_for_0_1():
+    data = fetch_data('sample_data/day19-different-scanners.txt')
+    beacons, scanners_with_known_positions = map_all_beacons([data[0], data[1]])
+    assert len(beacons) == 12
+    assert set(scanners_with_known_positions.keys()) == {0,1}
+    assert scanners_with_known_positions[1][0] == (68,-1246,-43)
+
+def test_map_all_beacons_for_0_1_4():
+    data = fetch_data('sample_data/day19-different-scanners.txt')
+    beacons, scanners_with_known_positions = map_all_beacons([data[0], data[1], data[4]])
+    assert len(beacons) == 24
+    assert set(scanners_with_known_positions.keys()) == {0,1,4}
+    assert scanners_with_known_positions[4][0] == (-20,-1133,1061)
+
+def _test_map_all_beacons():
+    # I _think_ that once we find how scanners 0 and 1 overlap,
+    # we then look for any beacons that overlap between 0 and 2, or 0 and 1.
+    # Be careful not to double count any. And carry on through the growing list.
+    data = fetch_data('sample_data/day19-different-scanners.txt')
+    beacons, scanners_with_known_positions = map_all_beacons(data)
+    assert scanners_with_known_positions[0][0] == (0,0,0)
+    assert scanners_with_known_positions[1][0] == (68,-1246,-43)
+    assert scanners_with_known_positions[2][0] == (1105,-1205,1229)
+    assert scanners_with_known_positions[3][0] == (-92,-2380,-20)
+    assert scanners_with_known_positions[4][0] == (-20,-1133,1061)
+    assert len(beacons) == 79
 
 #-----------------------------------------------------#
 
